@@ -1,0 +1,42 @@
+[project]
+name = "deepfake-detection-platform"
+version = "0.1.0"
+description = "Production-oriented multimodal AI deepfake detection system"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "pydantic>=2.6.0",
+    "pydantic-settings>=2.2.0",
+    "sqlalchemy>=2.0.28",
+    "alembic>=1.13.0",
+    "psycopg2-binary>=2.9.9",
+    "redis>=5.0.0",
+    "celery>=5.3.6",
+    "python-multipart>=0.0.9",
+    "torch>=2.2.0",
+    "torchvision>=0.17.0",
+    "timm>=0.9.16",
+    "opencv-python>=4.9.0",
+    "pillow>=10.2.0",
+    "puremagic>=1.20",
+    "imageio>=2.34.0",
+    "imageio-ffmpeg>=0.4.9",
+    "librosa>=0.10.1",
+    "soundfile>=0.12.1",
+    "scipy>=1.12.0",
+    "numpy>=1.26.0",
+    "scikit-learn>=1.4.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.27.0"
+]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+pythonpath = ["."]
+addopts = "-v --tb=short"

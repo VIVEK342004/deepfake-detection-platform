@@ -1,0 +1,62 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+.env
+.env.local
+.venv
+env/
+venv/
+ENV/
+
+# Media uploads and storage
+storage/uploads/
+storage/processed/
+storage/thumbnails/
+storage/temp/
+*.mp4
+*.avi
+*.mov
+*.wav
+*.mp3
+*.flac
+*.jpg
+*.jpeg
+*.png
+
+# ML checkpoints and weights
+ml/checkpoints/*.pt
+ml/checkpoints/*.pth
+ml/checkpoints/*.onnx
+ml/checkpoints/*.bin
+ml/checkpoints/*.safetensors
+ml/datasets/data/
+!ml/checkpoints/.gitkeep
+!ml/datasets/.gitkeep
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
