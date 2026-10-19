@@ -1,4 +1,4 @@
-import os
+﻿import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +11,7 @@ from backend.app.db.base import Base
 import backend.app.db.models  # Ensure models are registered with Base
 from backend.app.api.v1.health import router as health_router
 from backend.app.api.v1.analyses import router as analyses_router
+from backend.app.api.v1.auth import router as auth_router
 from ml.inference.engine import engine as ml_engine
 
 @asynccontextmanager
@@ -64,6 +65,7 @@ app.add_middleware(
 # Register versioned API routers
 app.include_router(health_router, prefix=settings.API_V1_STR)
 app.include_router(analyses_router, prefix=settings.API_V1_STR)
+app.include_router(auth_router, prefix=settings.API_V1_STR)
 
 @app.get("/", tags=["Root"])
 def root():
@@ -77,3 +79,4 @@ def root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("backend.app.main:app", host=settings.HOST, port=settings.PORT, reload=settings.DEBUG)
+

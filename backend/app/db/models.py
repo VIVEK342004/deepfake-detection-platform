@@ -1,4 +1,4 @@
-import uuid
+﻿import uuid
 from datetime import datetime, timezone
 from sqlalchemy import (
     Column,
@@ -20,10 +20,24 @@ def generate_uuid() -> str:
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
+    email = Column(String(255), nullable=False, unique=True, index=True)
+    hashed_password = Column(String(255), nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+    analyses = relationship("Analysis", back_populates="owner")
+
+
 class Analysis(Base):
     __tablename__ = "analyses"
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    owner = relationship("User", back_populates="analyses")
     media_type = Column(String(20), nullable=False, index=True)  # image, video, audio
     original_filename = Column(String(255), nullable=False)
     stored_filename = Column(String(255), nullable=False)
@@ -102,3 +116,4 @@ class ModelVersion(Base):
     description = Column(Text, nullable=True)
     license = Column(String(100), nullable=True)
     last_checked_at = Column(DateTime(timezone=True), default=utc_now)
+

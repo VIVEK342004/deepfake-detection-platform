@@ -17,6 +17,7 @@ from sqlalchemy import desc
 
 from backend.app.db.session import get_db
 from backend.app.db.models import Analysis, ModalityResult
+from backend.app.core.auth_dependencies import get_current_user
 from backend.app.schemas.analysis import (
     AnalysisCreateResponse,
     AnalysisSummaryResponse,
@@ -41,7 +42,8 @@ router = APIRouter(prefix="/analyses", tags=["Analyses"])
 async def create_analysis(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
 ):
     """
     Validates uploaded media, creates an analysis record, and enqueues inference.
@@ -83,6 +85,7 @@ async def create_analysis(
 
     # Step 4: Persist DB record
     analysis = Analysis(
+        user_id=current_user.id,
         media_type=media_type,
         original_filename=clean_filename,
         stored_filename=stored_name,
@@ -127,10 +130,11 @@ def list_analyses(
     status_filter: Optional[str] = Query(None, alias="status"),
     risk_level: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
 ):
-    """Lists analyses with pagination, filtering, and search."""
-    query = db.query(Analysis)
+    """Lists the authenticated user's analyses with pagination and filters."""
+    query = db.query(Analysis).filter(Analysis.user_id == current_user.id)
 
     if media_type:
         query = query.filter(Analysis.media_type == media_type)
@@ -152,17 +156,31 @@ def list_analyses(
     )
 
 @router.get("/{analysis_id}", response_model=AnalysisDetailResponse)
-def get_analysis(analysis_id: str, db: Session = Depends(get_db)):
-    """Retrieves full analysis record and modality results."""
-    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+def get_analysis(
+    analysis_id: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    """Retrieves the authenticated user's analysis and modality results."""
+    analysis = db.query(Analysis).filter(
+        Analysis.id == analysis_id,
+        Analysis.user_id == current_user.id,
+    ).first()
     if not analysis:
         raise HTTPException(status_code=404, detail=f"Analysis with ID '{analysis_id}' not found.")
     return analysis
 
 @router.get("/{analysis_id}/report", response_model=AnalysisReportResponse)
-def get_analysis_report(analysis_id: str, db: Session = Depends(get_db)):
-    """Generates structured forensic intelligence report."""
-    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+def get_analysis_report(
+    analysis_id: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    """Generates a forensic report for the authenticated user's analysis."""
+    analysis = db.query(Analysis).filter(
+        Analysis.id == analysis_id,
+        Analysis.user_id == current_user.id,
+    ).first()
     if not analysis:
         raise HTTPException(status_code=404, detail=f"Analysis with ID '{analysis_id}' not found.")
 
@@ -220,9 +238,16 @@ def get_analysis_report(analysis_id: str, db: Session = Depends(get_db)):
     )
 
 @router.get("/{analysis_id}/media")
-def get_analysis_media(analysis_id: str, db: Session = Depends(get_db)):
-    """Serves media file securely for playback and review."""
-    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+def get_analysis_media(
+    analysis_id: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    """Serves media only to the owner of the analysis."""
+    analysis = db.query(Analysis).filter(
+        Analysis.id == analysis_id,
+        Analysis.user_id == current_user.id,
+    ).first()
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found.")
 

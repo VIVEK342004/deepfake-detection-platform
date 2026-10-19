@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
 
     SECRET_KEY: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     @field_validator("SECRET_KEY")
     @classmethod
@@ -88,3 +89,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
