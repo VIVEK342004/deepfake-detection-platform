@@ -10,6 +10,16 @@ from backend.app.core.logging import logger
 from backend.app.workers.celery_app import celery_app
 from ml.inference.engine import engine
 
+def to_serializable(val):
+    """Recursively converts numpy types and non-serializable objects into native python types."""
+    if isinstance(val, dict):
+        return {str(k): to_serializable(v) for k, v in val.items()}
+    elif isinstance(val, (list, tuple)):
+        return [to_serializable(v) for v in val]
+    elif hasattr(val, "item"):
+        return val.item()
+    return val
+
 def execute_analysis_pipeline(analysis_id: str):
     """
     Core pipeline logic that retrieves the file, runs inference via engine,
@@ -48,10 +58,10 @@ def execute_analysis_pipeline(analysis_id: str):
                 model_version="1.0.0",
                 status=visual.get("status", "completed"),
                 is_synthetic=visual.get("is_synthetic"),
-                confidence_score=visual.get("confidence_score", 0.0),
-                raw_scores=visual.get("raw_scores", {}),
-                artifacts=visual.get("artifacts", {}),
-                execution_time_seconds=visual.get("execution_time_seconds", 0.0),
+                confidence_score=float(visual.get("confidence_score", 0.0)),
+                raw_scores=to_serializable(visual.get("raw_scores", {})),
+                artifacts=to_serializable(visual.get("artifacts", {})),
+                execution_time_seconds=float(visual.get("execution_time_seconds", 0.0)),
                 limitations_notes=visual.get("limitations_notes")
             )
             db.add(modality_res)
@@ -66,10 +76,10 @@ def execute_analysis_pipeline(analysis_id: str):
                 model_version="1.0.0",
                 status=audio.get("status", "completed"),
                 is_synthetic=audio.get("is_synthetic"),
-                confidence_score=audio.get("confidence_score", 0.0),
-                raw_scores=audio.get("raw_scores", {}),
-                artifacts=audio.get("artifacts", {}),
-                execution_time_seconds=audio.get("execution_time_seconds", 0.0),
+                confidence_score=float(audio.get("confidence_score", 0.0)),
+                raw_scores=to_serializable(audio.get("raw_scores", {})),
+                artifacts=to_serializable(audio.get("artifacts", {})),
+                execution_time_seconds=float(audio.get("execution_time_seconds", 0.0)),
                 limitations_notes=audio.get("limitations_notes")
             )
             db.add(modality_res)
@@ -84,10 +94,10 @@ def execute_analysis_pipeline(analysis_id: str):
                 model_version="1.0.0",
                 status=sync.get("status", "completed"),
                 is_synthetic=sync.get("is_synthetic"),
-                confidence_score=sync.get("confidence_score", 0.0),
-                raw_scores=sync.get("raw_scores", {}),
-                artifacts=sync.get("artifacts", {}),
-                execution_time_seconds=sync.get("execution_time_seconds", 0.0),
+                confidence_score=float(sync.get("confidence_score", 0.0)),
+                raw_scores=to_serializable(sync.get("raw_scores", {})),
+                artifacts=to_serializable(sync.get("artifacts", {})),
+                execution_time_seconds=float(sync.get("execution_time_seconds", 0.0)),
                 limitations_notes=sync.get("limitations_notes")
             )
             db.add(modality_res)
@@ -96,9 +106,9 @@ def execute_analysis_pipeline(analysis_id: str):
         verdict = engine.synthesize_verdict(results)
         analysis.status = verdict["status"]
         analysis.overall_prediction = verdict["overall_prediction"]
-        analysis.overall_confidence = verdict["overall_confidence"]
+        analysis.overall_confidence = float(verdict["overall_confidence"])
         analysis.risk_level = verdict["risk_level"]
-        analysis.summary_findings = verdict["summary_findings"]
+        analysis.summary_findings = to_serializable(verdict["summary_findings"])
         analysis.completed_at = datetime.now(timezone.utc)
 
         db.commit()
@@ -107,6 +117,7 @@ def execute_analysis_pipeline(analysis_id: str):
     except Exception as e:
         logger.exception(f"Error during analysis pipeline for '{analysis_id}': {e}")
         try:
+            db.rollback()
             analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
             if analysis:
                 analysis.status = "failed"
@@ -123,3 +134,4 @@ def execute_analysis_pipeline(analysis_id: str):
 def process_analysis_task(self, analysis_id: str):
     """Celery task entrypoint."""
     execute_analysis_pipeline(analysis_id)
+

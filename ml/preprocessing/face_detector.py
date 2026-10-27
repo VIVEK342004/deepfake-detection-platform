@@ -37,7 +37,7 @@ class FaceDetector:
             flags=cv2.CASCADE_SCALE_IMAGE
         )
 
-        return [tuple(box) for box in faces]
+        return [tuple(int(c) for c in box) for box in faces]
 
     def crop_primary_face(
         self,
@@ -55,7 +55,7 @@ class FaceDetector:
 
         # Sort by area descending to find the primary face
         faces_sorted = sorted(faces, key=lambda b: b[2] * b[3], reverse=True)
-        x, y, w, h = faces_sorted[0]
+        x, y, w, h = (int(c) for c in faces_sorted[0])
 
         img_h, img_w = image_np.shape[:2]
         margin_x = int(w * margin_ratio)

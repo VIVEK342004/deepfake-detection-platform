@@ -180,9 +180,9 @@ class VisualDetectorService:
                     "decision_threshold": 0.5
                 },
                 "artifacts": {
-                    "face_detected": face_detected,
-                    "face_box": list(face_box) if face_box else None,
-                    "total_faces": total_faces,
+                    "face_detected": bool(face_detected),
+                    "face_box": [int(x) for x in face_box] if face_box else None,
+                    "total_faces": int(total_faces),
                     "subject_type": subject_type,
                     "device_used": str(self.device)
                 },
